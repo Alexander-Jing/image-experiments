@@ -1,2 +1,2 @@
 # image-experiments
-codes for image experiments
+Codes for image experiments
