@@ -10,44 +10,6 @@ import math
 from numpy.core.fromnumeric import shape
 from numpy.testing._private.utils import print_assert_equal
 
-def scanLine4e(f,I,loc):
-    """Fetches the pixels from the line or column of a picture 
-
-    use the CV2 to load the images, and then extract the value of pixels 
-    
-    Args:
-        f: numpy array, the picture with in the from of grey value 
-        I: the integer(int), indicating the number of the row or column we want
-        loc: the string, indicating the whether it is row or column, \
-            " row" means in the row, "column" means in the column 
-    
-    Returns:
-        s: numpy array, the grey value of the row or column in the picture
-    
-    Raises: 
-        ValueError: the arg f must be the picture 
-        ValueError: the loc must be 'row' or 'col'
-    """
-    f = np.asarray(f)  # transform the picture as a numpy array
-    try:
-        image_row,image_col = f.shape
-        if image_row <= 1  or image_col <= 1:
-            raise ValueError("f must be the image")  # raise the error if it is not an image 
-    except:
-        raise
-    
-    try:
-        if loc!='row' and loc!='col':
-            raise ValueError("loc must be 'row' or 'col'")  # raise the error if the arg loc is not 'row' or 'col'
-    except:
-        raise
-    
-    if loc=='row':
-        s = f[I,:]
-    elif loc=='col':
-        s = f[:,I]
-    
-    return s    
 
 def rgb1gray(f,method='NTSC'):
     """transform the colorful image to the grey image
@@ -187,48 +149,92 @@ def gaussKernel(sig,m=None):
 
 
 if __name__ == "__main__":
-    """
-    # test the function scanLine4e(f,I,loc)
-    f = cv2.imread(os.getcwd()+'\images'+'\cameraman.tif',flags=2)
-    f = np.asarray(f)
-    image_val = scanLine4e(f,125,'row')
-    x_aixs = np.array([i for i in range(image_val.shape[0])])
-    plt.plot(x_aixs,image_val)
-    plt.show()"""
-
-    """# test the function rgb1gray
-    f = cv2.imread(os.getcwd()+'\images'+'\mandril_color.tif',flags=1)
-    cv2.imshow('colorful',f)  # the initial colorful image 
-    f = rgb1gray(f)
-    cv2.imshow('grey',f)
-    cv2.waitKey(0)
-    # test the function twodConv
-    w = np.eye(3)
-    f = twodConv(f,w)
-    cv2.imshow('conv',f)
-    cv2.waitKey(0)
-    # test the kernel
-    w = gaussKernel(1)
-    print(w.shape)"""
-
-    # test the gaussin filter
-    #f = cv2.imread(os.getcwd()+'\images'+'\mandril_color.tif',flags=1)  #'\lena512color.tiff' \mandril_color.tif
-    #cv2.imshow('colorful',f)  # the initial colorful image 
-    #print(f.shape)
-    #f = rgb1gray(f)  # the grey image 
     
-    f = cv2.imread(os.getcwd()+'\images'+'\einstein.tif',flags=2)  #\einstein.tif \cameraman.tif
-    cv2.imshow('grey',f)
-    f_gau = cv2.GaussianBlur(f,(7,7),1)
-    cv2.imshow('gaussinblur',f_gau)
-    #print(f.shape)
-    w = gaussKernel(1)  # the filter and convolution 
-    f = twodConv(f,w,'replicate')
-    f_dis = np.abs(f-f_gau)
-    #print(f.shape)
-    cv2.imshow('conv',f)
-    cv2.imshow('dis',f_dis)
-    cv2.waitKey(0)
+    f = cv2.imread(os.getcwd()+'\images'+'\cameraman.tif',flags=2)  # load the images
+    f1 = cv2.imread(os.getcwd()+'\images'+'\einstein.tif',flags=2)  
+    f2 = cv2.imread(os.getcwd()+'\images'+'\lena512color.tiff',flags=1) 
+    f3 = cv2.imread(os.getcwd()+'\images'+'\mandril_color.tif',flags=1)
+    f2 = rgb1gray(f2)
+    f3 = rgb1gray(f3)  # transfer the colorful image into the gray ones 
+
+    # task-1,test the convolution in different sigmas
+    images = [f,f,f,f,f, f1,f1,f1,f1,f1, f2,f2,f2,f2,f2, f3,f3,f3,f3,f3]  # the images
+    sigmas = [0,1,2,3,5, 0,1,2,3,5, 0,1,2,3,5, 0,1,2,3,5]
+    titles = ['origin','sig=1','sig=2','sig=3','sig=5']  # the titles
+    
+    for i in range(20):
+        plt.subplot(4,5,i+1)
+        if sigmas[i] != 0:
+            w = gaussKernel(sigmas[i])
+            images[i] = twodConv(images[i],w)
+        plt.imshow(images[i],cmap='gray')
+        plt.xticks([])
+        plt.yticks([])
+        if i>=15:
+            plt.xlabel(titles[i-15])
+    plt.show()
+    
+    # task-2 the comparison between twodConv and CV2.GaussianBlur
+    images_1 = [f,f,f,f,f1,f1,f1,f1,f2,f2,f2,f2,f3,f3,f3,f3]
+    titles_1 = ['origin','twodConv','GaussianBlur','dis-abs']
+    for i in range(16):
+        plt.subplot(4,4,i+1)
+        if i%4 ==1:
+            w = gaussKernel(1)
+            images_1[i] = twodConv(images_1[i],w)
+        elif i%4 == 2:
+            images_1[i] = cv2.GaussianBlur(images_1[i],(7,7),1)
+        elif i%4 == 3:
+            images_1[i] = np.abs(images_1[i-1]-images_1[i-2])
+        plt.imshow(images_1[i],cmap='gray')
+        plt.xticks([])
+        plt.yticks([])
+        if i>=12:
+            plt.xlabel(titles_1[i-12])
+    plt.show()
+    
+    # task-3 the comparison between two types of paddings
+    images_2 = [f,f,f,f,f2,f2,f2,f2]
+    titles_2 = ['origin','replicate padding','zero padding']
+    for i in range(6):
+        plt.subplot(2,3,i+1)
+        
+        if i%3 == 1:
+            w = gaussKernel(1)
+            images_2[i] = twodConv(images_2[i],w,'replicate')
+        elif i%3 == 2:
+            w = gaussKernel(1)
+            images_2[i] = twodConv(images_2[i],w,'zero')
+        if i >= 3:
+            plt.xlabel(titles_2[i-3])
+        plt.xticks([])
+        plt.yticks([])
+        plt.imshow(images_2[i],cmap='gray')
+    plt.show()
+
+    # task-3-1 the comparison between two types of paddings ('sig=1','sig=2','sig=3','sig=5')
+    images_3 = [f,f,f,f,f, f,f,f,f,f, f2,f2,f2,f2,f2, f2,f2,f2,f2,f2]
+    titles_3y = ['replicate','zero','replicate','zero']
+    titles_3x = ['origin','sig=1','sig=2','sig=3','sig=5']
+    sigmas_3 = [0,1,2,3,5, 0,1,2,3,5, 0,1,2,3,5, 0,1,2,3,5]
+    methods_3 = ['replicate','replicate','replicate','replicate','replicate',\
+        'zero','zero','zero','zero','zero',\
+        'replicate','replicate','replicate','replicate','replicate',\
+        'zero','zero','zero','zero','zero']
+    for i in range(20):
+        plt.subplot(4,5,i+1)
+        if sigmas_3[i] != 0:
+            w = gaussKernel(sigmas_3[i])
+            images_3[i] = twodConv(images_3[i],w,methods_3[i])
+        if not i%5:
+            plt.ylabel(titles_3y[int(i/5)])
+        if i >= 15:
+            plt.xlabel(titles_3x[i-15])
+        plt.xticks([])
+        plt.yticks([])
+        plt.imshow(images_3[i],cmap='gray')
+    plt.show()
+            
 
     
     
