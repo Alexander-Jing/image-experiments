@@ -4,10 +4,6 @@ import cv2
 import matplotlib.pyplot as plt
 import os
 import math
-from numpy.core.defchararray import count
-
-from numpy.core.fromnumeric import shape
-from numpy.core.getlimits import _fr1
 
 
 def dft2D(f):
@@ -84,7 +80,7 @@ def idft2D(F):
     for y in range(N):
         f[:,y] = np.fft.fft(f[:,y],M,axis=0)  
     f = (1/(M*N))*np.conj(f)  # according to the formula, we have to do the np.conj and multiple the (1/MN)
-    
+
     f = np.real(f)  
     f = np.abs(f)  # we choose the real part of the IFFT image 
     f.astype(np.float)  # take care, the image type is np.float, in order to make the farther manipulations
@@ -96,71 +92,29 @@ def idft2D(F):
 
 if __name__ == "__main__":
     
-    f = cv2.imread(os.getcwd()+'\\images'+'\\rose512.tif',flags=2)
-    f = np.asarray(f)
-    f = f.astype(np.float64)  # transform the image into the data type of float64
-    f = f/255.0  # normalization the input image
+    plt.subplot(2,2,1)
+    test_image = np.zeros([512,512])
+    #test_image[227:287,248:266] = np.ones([60,18])
+    #test_image[197:317,247:267] = np.ones([120,20])
+    test_image[207:307,248:266] = np.ones([100,18])  # set the size of the white block 
+    plt.imshow(test_image.astype(np.uint8),cmap='gray')
     
-    F = dft2D(f)  # get the FFT image 
-    g = idft2D(F) # get the IFFT image 
-    d = np.abs(f*255-g*255)  # get the error, the image f,g error will be calculated in the form of float
-    print("error abs:",np.sum(d))
-
-    # show the images, the images will be shown in the type of np.uint8
-    # we make the manipulation of images with the type of np.float64, but show the image in the type of np.uint8
-    plt.subplot(1,4,1)
-    plt.imshow((f*255).astype(np.uint8),cmap='gray')
-    plt.xlabel("the original image")
-    plt.xticks([])
-    plt.yticks([])
-
-    plt.subplot(1,4,2)
-    plt.imshow((np.abs(F)).astype(np.uint8),cmap='gray')
-    plt.xlabel("the FFT image")
-    plt.xticks([])
-    plt.yticks([])
+    plt.subplot(2,2,2)
+    test_image_fft = dft2D(test_image)
+    plt.imshow((np.abs(test_image_fft)),cmap='gray')
     
-    plt.subplot(1,4,3)
-    plt.imshow((g*255).astype(np.uint8),cmap='gray')
-    plt.xlabel("the IFFT image")
-    plt.xticks([])
-    plt.yticks([])
+    plt.subplot(2,2,3)
+    test_image_center = test_image.copy()
+    for x in range(test_image_center.shape[0]):  # generate the center image 
+        for y in range(test_image_center.shape[1]):
+            test_image_center[x,y] = test_image_center[x,y]*(-1)**(x+y)  
+    F = dft2D(test_image_center)
+    plt.imshow(np.abs(F), cmap='gray')
+    plt.subplot(2,2,4)
 
-    plt.subplot(1,4,4)
-    plt.imshow(d.astype(np.uint8),cmap='gray')
-    plt.xlabel("the error")
-    plt.xticks([])
-    plt.yticks([])
+    S = np.log2(1+abs(F))
+    plt.imshow(np.abs(S), cmap='gray')
     plt.show()
-    
-    
-   # using other images for testing 
-    image_names=['house.tif','house02.tif', 'lena_gray_512.tif', 
-    'lunar_surface.tif', 'characters_test_pattern.tif']
-    count = 0
-    
-    for image_name in image_names:
-        count += 1
-        f = cv2.imread(os.getcwd()+'\\images'+'\\'+ image_name, flags=2)
-        f = np.asarray(f)
-        f = f.astype(np.float64)  # transform the image into the data type of float64
-        f = f/255.0  # normalization the input image
-        F = dft2D(f)  # get the FFT image 
-        plt.subplot(2,5,count)
-        plt.imshow((f*255).astype(np.uint8),cmap='gray')
-        if count==1 :
-            plt.ylabel("original")
-        plt.xticks([])
-        plt.yticks([])
-        plt.subplot(2,5,count+5)
-        plt.imshow((np.abs(F)).astype(np.uint8),cmap='gray')
-        if count+5 == 6 :
-            plt.ylabel("FFT")
-        plt.xticks([])
-        plt.yticks([])
-
-    plt.show()
-
     
 
 
